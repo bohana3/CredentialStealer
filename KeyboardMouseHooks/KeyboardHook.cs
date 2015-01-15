@@ -41,7 +41,7 @@ namespace RamGecTools
         public enum VKeys
         {
             // Losely based on http://www.pinvoke.net/default.aspx/Enums/VK.html
-
+            CLICKMOUSE = 0x00,
             LBUTTON = 0x01,     // Left mouse button
             RBUTTON = 0x02,     // Right mouse button
             CANCEL = 0x03,      // Control-break processing

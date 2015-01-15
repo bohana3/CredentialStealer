@@ -65,11 +65,16 @@ namespace KeyboardRecorder
             keyboardHook.KeyUp += new RamGecTools.KeyboardHook.KeyboardHookCallback(KeyUp);
             keyboardHook.Install();
 
-            //mouseHook = new MouseHook();
-            //mouseHook.LeftButtonUp += new MouseHook.MouseHookCallback(LeftButtonUp);
-            //mouseHook.Install();
+            mouseHook = new MouseHook();
+            mouseHook.LeftButtonUp += new MouseHook.MouseHookCallback(LeftButtonUp);
+            mouseHook.Install();
 
             resolver = new KeyResolver();
+        }
+
+        private void LeftButtonUp(MouseHook.MSLLHOOKSTRUCT mouseStruct)
+        {
+            KeyUp(KeyboardHook.VKeys.CLICKMOUSE);
         }
 
         public string UpdateFileName(string pathToFile)
